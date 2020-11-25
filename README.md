@@ -27,7 +27,7 @@ optional arguments:
   --limit LIMIT         Return the n most depended-upon packages only, use -1 for untruncted results
                         (default: -1)
 ```
-## 1000 most-depended upon 24th of November 2020
+## 1000 most-depended upon (24th of November 2020)
 
 | # | name   | count |
 |---|--------|-------|
