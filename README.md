@@ -1,7 +1,7 @@
-# MOST DEPENDED UPON PACKAGES OF NPM
+# most depended-upon packages of npm
 Sometimes you just need to know which packages are the most important to the npm ecosystem.
 
-## HOW TO USE
+## how to use
 0. Download list of available packages (including meta information) from npm
   - `curl -o package_index_$(date --iso-8601=seconds).json https://replicate.npmjs.com/_all_docs?include_docs=true`
   - WARNING: This file is HUGE, around 50 GB
