@@ -5,14 +5,18 @@ Sometimes you just need to know which packages are the most important to the npm
 0. Download list of available packages (including meta information) from npm
     - `curl -o package_index_$(date --iso-8601=seconds).json https://replicate.npmjs.com/_all_docs?include_docs=true`
     - WARNING: This file is HUGE, around 50 GB
-0. Run script
-    - `python main.py --infile package_index.json`
+0. Preprocess that JSON
+    - `python main.py --preprocess --infile package_index.json`
     - Grab a coffee this may take a while
+0. Count dependencies
+    - `python main.py`
+0. Build dependency tree
+    - `python main.py --dependency_tree --package engine.io`
 0. Profit
 
 ```
-usage: main.py [-h] [--loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--processes PROCESSES] --infile
-               INFILE [--outfile OUTFILE] [--limit LIMIT]
+usage: main.py [-h] [--loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--preprocess] [--infile INFILE]
+               [--dependency_tree] [--package PACKAGE] [--outfile OUTFILE] [--limit LIMIT]
 
 Calculate the most-depended upon packages on npm.
 
@@ -20,13 +24,33 @@ optional arguments:
   -h, --help            show this help message and exit
   --loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         Which logelevel to use (default: INFO)
-  --processes PROCESSES
-                        Number of processes to use (default: 4)
+  --preprocess          Preprocess the package index to speed up processing (default: False)
   --infile INFILE       Filename of the package list you downloaded from npm (default: None)
+  --dependency_tree     Build a dependency tree for a given package (default: False)
+  --package PACKAGE     Package for which a dependency tree should be build (default: None)
   --outfile OUTFILE     Filename to which results will be written (default: most_depended_upon.json)
   --limit LIMIT         Return the n most depended-upon packages only, use -1 for untruncted results
                         (default: -1)
 ```
+
+## dependency tree for engine.io
+```
+engine.io
+ +-- accepts
+ |   +-- mime-types
+ |   |   +-- mime-db
+ |   +-- negotiator
+ +-- base64id
+ +-- cookie
+ +-- cors
+ |   +-- object-assign
+ |   +-- vary
+ +-- debug
+ |   +-- ms
+ +-- engine.io-parser
+ +-- ws
+```
+
 ## 1000 most depended-upon (24th of November 2020)
 
 | # | name   | count |

@@ -1,7 +1,8 @@
 import json
 import logging
 import argparse
-import multiprocessing
+
+import asciitree
 
 parser = argparse.ArgumentParser(
     description='Calculate the most-depended upon packages on npm.',
@@ -10,26 +11,23 @@ parser.add_argument('--loglevel',
                     choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                     default='INFO',
                     help='Which logelevel to use')
-parser.add_argument('--processes',
-                    type=int,
-                    default=multiprocessing.cpu_count(),
-                    help='Number of processes to use')
-parser.add_argument(
-    '--infile',
-    type=str,
-    required=True,
-    help='Filename of the package list you downloaded from npm')
+parser.add_argument('--preprocess', default=False, action='store_true', help='Preprocess the package index to speed up processing')
+parser.add_argument('--infile',
+                    type=str,
+                    help='Filename of the package list you downloaded from npm')
+parser.add_argument('--dependency_tree', default=False, action='store_true', help='Build a dependency tree for a given package')
+parser.add_argument('--package',
+                    type=str,
+                    help='Package for which a dependency tree should be build')
 parser.add_argument('--outfile',
                     type=str,
                     default='most_depended_upon.json',
                     help='Filename to which results will be written')
-parser.add_argument(
-    '--limit',
-    type=int,
-    default=-1,
-    help=
-    'Return the n most depended-upon packages only, use -1 for untruncted results'
-)
+parser.add_argument('--limit',
+                    type=int,
+                    default=-1,
+                    help=
+                    'Return the n most depended-upon packages only, use -1 for untruncted results')
 
 args = parser.parse_args()
 
@@ -70,41 +68,20 @@ def get_packages():
             yield package
 
 
-def get_dependencies_per_package(package):
-    # there are packages without a name... However, name == id
-    name = package['doc'].get('name') or package['id']
-
-    try:
-        latest_version = package['doc']['dist-tags']['latest']
-    except KeyError:
-        # sometimes packages don't have a 'latest' version
-        logger.warning(f'Package {name} does not have a latest version')
-        return []
-
-    try:
-        dependencies = list(package['doc']['versions'][latest_version].get('dependencies', {}).keys())
-    except KeyError:
-        # sometimes packages list versions as latest that do not exist
-        logger.warning(
-            f'Package {name} does not have version {latest_version}')
-        return []
-
-    logger.debug(f'Package {name} got {len(dependencies)} dependencies')
-    return dependencies
-
-
-def main():
-    logger.info(f'Using {args.processes} worker processes')
+def determine_most_depended_upon():
+    logger.info(f'Starting to count dependencies')
     most_depended_upon = {}
 
-    with multiprocessing.Pool(processes=args.processes) as pool:
-        for result in pool.imap_unordered(get_dependencies_per_package, get_packages()):
-            # Count occurance per package in a dictionary
-            for dependency in result:
-                if most_depended_upon.get(dependency):
-                    most_depended_upon[dependency] += 1
-                else:
-                    most_depended_upon[dependency] = 1
+    with open('preprocessed.json', 'r') as infile:
+        preprocessed = json.load(infile)
+
+    for package in preprocessed:
+        logger.debug(f'{package} got {len(preprocessed[package])} dependencies')
+        for dependency in preprocessed[package]:
+            if most_depended_upon.get(dependency):
+                most_depended_upon[dependency] += 1
+            else:
+                most_depended_upon[dependency] = 1
 
     logger.info('Sorting results by dependency count')
     if args.limit > 0:
@@ -126,5 +103,56 @@ def main():
     logger.info('Goodbye')
 
 
+def preprocess(package):
+    name = package['id']
+
+    try:
+        latest_version = package['doc']['dist-tags']['latest']
+    except KeyError:
+        # sometimes packages don't have a 'latest' version
+        logger.warning(f'{name} does not have a latest version')
+        return {name: []}
+
+    try:
+        dependencies = list(package['doc']['versions'][latest_version].get('dependencies', {}).keys())
+    except KeyError:
+        # sometimes packages list versions as latest that do not exist
+        logger.warning(f'{name} does not have version {latest_version}')
+        return {name: []}
+
+    return {name: dependencies}
+
+
+def get_dependencies(package, preprocessed):
+    try:
+        return {dependency: get_dependencies(dependency, preprocessed) for dependency in preprocessed[package]}
+    except KeyError:
+        logger.error(f'{package} is not in the package index')
+
+
+def build_dependency_tree(package):
+    logger.info(f'Building dependency tree for {package}')
+    with open('preprocessed.json', 'r') as infile:
+        preprocessed = json.load(infile)
+        dependency_tree = {package: get_dependencies(package, preprocessed)}
+        tr = asciitree.LeftAligned()
+        print(tr(dependency_tree))
+
+
 if __name__ == '__main__':
-    main()
+    if args.preprocess:
+        if not args.infile:
+            parser.error("--preprocess requires --infile")
+        preprocessed = {}
+
+        for package in get_packages():
+            small.update(preprocess(package))
+
+        with open('preprocessed.json', 'w') as outfile:
+            json.dump(preprocessed, outfile)
+    elif args.dependency_tree:
+        if not args.package:
+            parser.error("--dependency_tree requires --package")
+        build_dependency_tree(args.package)
+    else:
+        determine_most_depended_upon()
