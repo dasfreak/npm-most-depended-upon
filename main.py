@@ -146,7 +146,7 @@ if __name__ == '__main__':
         preprocessed = {}
 
         for package in get_packages():
-            small.update(preprocess(package))
+            preprocessed.update(preprocess(package))
 
         with open('preprocessed.json', 'w') as outfile:
             json.dump(preprocessed, outfile)
