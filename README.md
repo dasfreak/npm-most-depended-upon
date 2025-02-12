@@ -11,32 +11,32 @@ Sometimes you just need to know which packages are the most important to the npm
    ```
 0. Download registry docs (in pages, which is recoverable and more fault tolerant than downloading it in once big chunk)
    ```
-   python scripts/download-package-index-chunked.py --out-path data/npm-index-pages --include-docs
+   python main.py --out-path data/npm-index-pages --include-docs
    ```
 0. Build dependency map from downloaded registry docs
    ```
-   python scripts/most-depended-upon.py --strip-from-pages --in-path data/npm-index-pages --out-path data/dependency-map.json
+   python main.py --strip-from-pages --in-path data/npm-index-pages --out-path data/dependency-map.json
    ```
 0. Build dependant map (inverse of the dependency map)
    ```
-   python scripts/mode-depended-upon.py --build-dependant-map --in-path data/dependency-map.json --out-path data/dependant-map.json
+   python main.py --build-dependant-map --in-path data/dependency-map.json --out-path data/dependant-map.json
    ```
 0. Count direct dependants
    ```
-   python scripts/mode-depended-upon.py --count-direct --in-path data/dependant-map.json --out-path data/direct-dependant-amounts.json
+   python main.py --count-direct --in-path data/dependant-map.json --out-path data/direct-dependant-amounts.json
    ```
 0. Build transitive dependant map
    ```
-   python scripts/mode-depended-upon.py --build-transitive-dependant-map --in-path data/dependant-map.json --out-path data/transitive-dependant-map.json
+   python main.py --build-transitive-dependant-map --in-path data/dependant-map.json --out-path data/transitive-dependant-map.json
    ```
 0. Count transitive dependants
    ```
-   python scripts/mode-depended-upon.py --count-transitive --in-path data/transitive-dependant-map.json --out-path data/transitive-dependant-amounts.json
+   python main.py --count-transitive --in-path data/transitive-dependant-map.json --out-path data/transitive-dependant-amounts.json
    ```
 0. Build markdown tables
    ```
-   python scripts/build-markdown.py --in-path data/direct-dependant-amounts.json --out-path data/direct-dependant-amounts.md --limit 1000
-   python scripts/build-markdown.py --in-path data/transitive-dependant-amounts.json --out-path data/transitive-dependant-amounts.md --limit 1000
+   python build-markdown.py --in-path data/direct-dependant-amounts.json --out-path data/direct-dependant-amounts.md --limit 1000
+   python build-markdown.py --in-path data/transitive-dependant-amounts.json --out-path data/transitive-dependant-amounts.md --limit 1000
    ```
 
 ```
